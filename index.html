@@ -21,8 +21,6 @@
     .options-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; background: #fff; border-radius: 12px; padding: 10px 14px; border: 1px solid #ffd6e7; font-size: 0.85rem; }
     .options-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700; color: #555; }
     .options-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--pink); }
-    .novelty-banner { background: linear-gradient(90deg, #fff3cd, #ffe6f0); border: 2px solid #ffc107; border-radius: 12px; padding: 10px; text-align: center; margin-bottom: 12px; font-size: 0.85rem; font-weight: 700; color: #856404; display: none; }
-    .novelty-banner.show { display: block; animation: bounceIn 0.5s; }
     @keyframes bounceIn { 0% { transform: scale(0.8); opacity: 0; } 60% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
     .draw-area { background: #fff; border-radius: 20px; padding: 16px 12px 20px; text-align: center; box-shadow: 0 4px 20px rgba(255,107,157,0.2); border: 3px solid var(--pink); margin-bottom: 16px; position: relative; overflow: hidden; }
     .single-stage { perspective: 1000px; height: 180px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
@@ -252,6 +250,7 @@
     }
 
 
+
     /* ===== メンバー別オンラインくじ ラインナップ選択 ===== */
     .hidden-screen { display: none !important; }
     .selection-screen { padding: 4px 0 24px; }
@@ -371,13 +370,11 @@
     <div class="stats">
       <div class="stat-box"><div class="stat-label">引いた回数</div><div class="stat-value" id="drawCount">0</div></div>
       <div class="stat-box"><div class="stat-label">合計金額</div><div class="stat-value" id="totalYen">¥0</div></div>
-      <div class="stat-box"><div class="stat-label">ノベルティ</div><div class="stat-value" id="noveltyCount">0</div></div>
     </div>
     <div class="options-row">
       <label><input type="checkbox" id="skipAnim"> 最初から演出スキップ</label>
       <span style="font-size:0.75rem;color:#999;">A賞は豪華演出</span>
     </div>
-    <div class="novelty-banner" id="noveltyBanner">🎉 10枚引いたので【MEGALiFE!限定4カットフォトカード】ゲット！</div>
     <div class="draw-area">
       <div class="sparkle-container" id="sparkleContainer"></div>
       <div class="combo-banner" id="comboBanner"></div>
@@ -419,7 +416,6 @@
       <div class="inv-section"><h3>D賞 ランダム実写アクキー</h3><div class="inv-items" id="inv-D"><span class="empty">まだなし</span></div></div>
       <div class="inv-section"><h3>E賞 缶バッジセット</h3><div class="inv-items" id="inv-E"><span class="empty">まだなし</span></div></div>
       <div class="inv-section"><h3>F賞 クリアポスター</h3><div class="inv-items" id="inv-F"><span class="empty">まだなし</span></div></div>
-      <div class="inv-section"><h3>SPECIAL NOVELTY（4カットフォトカード）</h3><div class="inv-items" id="inv-N"><span class="empty">まだなし</span></div></div>
     </div>
     <div class="controls">
       <button class="ctrl-btn" onclick="resetAll()">リセット</button>
@@ -456,7 +452,7 @@
     // ★ GitHub Pages 公開後にこのURLを書き換えてください
     const SHARE_URL = "https://kk-0209-ice.github.io/megalife-kuji/";
 
-    let state = { draws: 0, yen: 0, novelty: 0, inventory: { A:{},B:{},C:{},D:{},E:{},F:{},N:{} }, history: [] };
+    let state = { draws: 0, yen: 0, inventory: { A:{},B:{},C:{},D:{},E:{},F:{} }, history: [] };
     let isDrawing = false, skipRequested = false;
     let selectedMember = null;
 
@@ -491,7 +487,7 @@
       state.inventory[rank][key]++;
     }
     function updateInventoryUI() {
-      ["A","B","C","D","E","F","N"].forEach(rank => {
+      ["A","B","C","D","E","F"].forEach(rank => {
         const el = document.getElementById("inv-"+rank);
         const items = state.inventory[rank];
         const keys = Object.keys(items);
@@ -502,7 +498,6 @@
     function updateStats() {
       document.getElementById("drawCount").textContent = state.draws;
       document.getElementById("totalYen").textContent = "¥" + state.yen.toLocaleString();
-      document.getElementById("noveltyCount").textContent = state.novelty;
     }
     function updateHistory() {
       document.getElementById("history").innerHTML = state.history.map(h =>
@@ -683,6 +678,7 @@
       // 簡易効果音（Web Audio）
       playCelebrateSound("a");
     }
+
 
     // ===== 共通 AudioContext（使いまわして音切れ防止） =====
     let _audioCtx = null;
@@ -885,13 +881,6 @@
       state.draws++; state.yen += 1000;
       const invKey = detail.text || finalName;
       addToInventory(finalRank, invKey);
-      if (state.draws % 10 === 0) {
-        state.novelty++;
-        addToInventory("N", "4カットフォトカード");
-        const banner = document.getElementById("noveltyBanner");
-        banner.classList.add("show");
-        setTimeout(() => banner.classList.remove("show"), 3000);
-      }
       state.history.unshift({
         n: state.draws,
         rank: finalRank,
@@ -1122,10 +1111,10 @@
       lines.push("");
       if (state.draws > 0) {
         lines.push(`【今回の結果】${state.draws}回 / ¥${state.yen.toLocaleString()}`);
-        const rankOrder = ["A","B","C","D","E","F","N"];
+        const rankOrder = ["A","B","C","D","E","F"];
         const rankNames = {
           A: "A賞", B: "B賞", C: "C賞",
-          D: "D賞", E: "E賞", F: "F賞", N: "ノベルティ"
+          D: "D賞", E: "E賞", F: "F賞"
         };
         const parts = [];
         rankOrder.forEach(rank => {
@@ -1178,7 +1167,7 @@
     }
     function resetAll() {
       if (!confirm("獲得景品と履歴をすべてリセットしますか？")) return;
-      state = { draws:0, yen:0, novelty:0, inventory:{A:{},B:{},C:{},D:{},E:{},F:{},N:{}}, history:[] };
+      state = { draws:0, yen:0, inventory:{A:{},B:{},C:{},D:{},E:{},F:{}}, history:[] };
       updateStats(); updateInventoryUI(); updateHistory();
       document.getElementById("singleStage").classList.remove("hidden");
       document.getElementById("multiStage").classList.remove("show");
@@ -1198,6 +1187,7 @@
     renderLineupGrid();
     updateStats(); updateInventoryUI();
   </script>
+
 
   <div class="flash-overlay" id="flashOverlay"></div>
   <div class="floating-text" id="floatingText"></div>
